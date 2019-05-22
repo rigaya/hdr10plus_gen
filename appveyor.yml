@@ -1,0 +1,64 @@
+﻿environment:
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      GENERATOR: "Visual Studio 15 2017"
+
+configuration:
+- Release
+
+branches:
+  only:
+  - master
+
+skip_non_tags: true
+
+platform:
+- Win32
+- x64
+
+init:
+  - ps: Set-WinSystemLocale ja-JP
+  - ps: Start-Sleep -s 15
+  - ps: Restart-Computer
+  - ps: Start-Sleep -s 15
+  - git config --global core.autocrlf input
+
+before_build:
+  - hg clone https://bitbucket.org/multicoreware/x265
+  - md build
+  - cd build
+  - cmake --version
+  - cmake -G "%GENERATOR%" -A "%PLATFORM%" ..
+  - ps: |
+      $version = $null
+      if (Test-Path Env:APPVEYOR_REPO_TAG_NAME)
+      {
+          $version = (Get-Item Env:APPVEYOR_REPO_TAG_NAME).Value
+      }
+      
+      if ([string]::IsNullOrEmpty($version))
+      {
+          $version = $env:APPVEYOR_BUILD_VERSION + '_Alpha'
+      }
+      $env:BUILD_VERSION=$version
+
+build:
+  project: build/hdr10plus_gen.sln
+
+after_build:
+  - 7z a -mx9 hdr10plus_gen_%BUILD_VERSION%_%PLATFORM%.7z "%APPVEYOR_BUILD_FOLDER%\build\hdr10plus_gen\Release\hdr10plus_gen.exe"
+
+artifacts:
+  - path: hdr10plus_gen_%BUILD_VERSION%_%PLATFORM%.7z
+    name: hdr10plus_gen_%BUILD_VERSION%_%PLATFORM%
+
+deploy:
+  provider: GitHub
+  auth_token:
+    secure: IDRwZWN1uQaTxb64SQnTDNJR5KPtCFPL3Mln9GrdZ7TSiyec/o1KXpOuh/50ZO5A
+  artifact: hdr10plus_gen_%BUILD_VERSION%_%PLATFORM%
+  draft: false
+  prerelease: false
+  on:
+    branch: master
+    appveyor_repo_tag: true
