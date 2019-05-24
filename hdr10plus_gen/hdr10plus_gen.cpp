@@ -8,7 +8,13 @@
 #include <string>
 #include "hdr10plus.h"
 
-using namespace std;
+static const char *EXE_VER = "0.00";
+
+void print_help() {
+    std::cerr << "hdr10plus_gen v" << EXE_VER << std::endl;
+    std::cerr << "Usage:" << std::endl;
+    std::cerr << "  hdr10plus_gen.exe -i <input json file> -o <output binary>" << std::endl;
+}
 
 int main(int argc, char **argv) {
     std::string inputFile;
@@ -20,10 +26,14 @@ int main(int argc, char **argv) {
         } else if (std::string(argv[iarg]) == "-o") {
             iarg++;
             outputFile = argv[iarg];
+        } else if (std::string(argv[iarg]) == "-h") {
+            print_help();
+            return 1;
         }
     }
     if (inputFile.length() == 0) {
         std::cerr << "input file not specified!" << std::endl;
+        print_help();
         return 1;
     }
     if (outputFile.length() == 0) {
@@ -36,7 +46,7 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    unique_ptr<FILE, decltype(&fclose)> fp(outputFile == "-" ? stdout : fopen(outputFile.c_str(), "wb"), fclose);
+    std::unique_ptr<FILE, decltype(&fclose)> fp(outputFile == "-" ? stdout : fopen(outputFile.c_str(), "wb"), fclose);
 
     const auto hdr10plus = hdr10plus_api_get();
     if (hdr10plus == nullptr) {

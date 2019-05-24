@@ -41,6 +41,7 @@ before_build:
           $version = $env:APPVEYOR_BUILD_VERSION + '_Alpha'
       }
       $env:BUILD_VERSION=$version
+  - cd ..\
 
 build:
   project: build/hdr10plus_gen.sln
